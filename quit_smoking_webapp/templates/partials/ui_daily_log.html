@@ -1,0 +1,48 @@
+<h2 class="text-lg font-semibold mb-4">Daily Log</h2>
+
+<div class="mt-4 flex gap-2 mb-4">
+  <a href="{% url 'dashboard' %}" class="px-4 py-2 rounded-md bg-slate-800 hover:bg-slate-700">Dashboard</a>
+
+  <button class="px-4 py-2 rounded-md bg-green-500 text-black hover:bg-green-400" hx-get="{% url 'ui_daily_log_add' %}" hx-target="#main" hx-push-url="true" hx-trigger="click">Add</button>
+</div>
+
+<table class="w-full border border-slate-800 text-sm">
+  <thead>
+    <tr class="bg-slate-800">
+      <th class="px-3 py-2 border border-slate-800 text-left">Date</th>
+      <th class="px-3 py-2 border border-slate-800 text-left">Cigarettes</th>
+      <th class="px-3 py-2 border border-slate-800 text-left">Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for log in logs %}
+      <tr>
+        <td class="px-3 py-2 border border-slate-800">{{ log.created_at }}</td>
+        <td class="px-3 py-2 border border-slate-800">{{ log.cigarettes_smoked }}</td>
+        <td class="px-3 py-2 border border-slate-800">
+          <div class="flex gap-2">
+            <button class="px-3 py-1 rounded-md bg-slate-800 hover:bg-slate-700" hx-get="{% url 'ui_daily_log_edit' log.id %}" hx-target="#main" hx-push-url="true">Edit</button>
+
+            <button class="px-3 py-1 rounded-md bg-red-500 text-black hover:bg-red-400" hx-get="{% url 'ui_daily_log_delete' log.id %}" hx-target="#main" hx-push-url="true">Delete</button>
+          </div>
+        </td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<div class="mt-4 flex justify-center gap-2">
+  {% if logs.has_other_pages %}
+    <div class="mt-4 flex items-center gap-2 text-sm">
+      {% if logs.has_previous %}
+        <button class="px-3 py-1 rounded-md bg-slate-800 hover:bg-slate-700" hx-get="{% url 'ui_daily_log' %}?page={{ logs.previous_page_number }}" hx-target="#main" hx-push-url="true">Previous</button>
+      {% endif %}
+
+      <span class="text-slate-300">Page {{ logs.number }} of {{ logs.paginator.num_pages }}</span>
+
+      {% if logs.has_next %}
+        <button class="px-3 py-1 rounded-md bg-slate-800 hover:bg-slate-700" hx-get="{% url 'ui_daily_log' %}?page={{ logs.next_page_number }}" hx-target="#main" hx-push-url="true">Next</button>
+      {% endif %}
+    </div>
+  {% endif %}
+</div>

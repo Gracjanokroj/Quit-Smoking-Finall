@@ -1,0 +1,58 @@
+<h2 class="text-lg font-semibold mb-3">
+  Community Ranking
+  {% if current_user_entry %}
+    -
+    {% if current_user_entry.eligible %}
+      your place: {{ current_user_place }}
+    {% else %}
+      you need at least {{ min_days_required }} tracked days
+    {% endif %}
+  {% endif %}
+</h2>
+
+<p class="mb-4 text-sm text-slate-300">
+  Ranking is based on smoke-free days, average cigarettes per day and regularity.
+  Minimum required tracked days: <span class="font-semibold">{{ min_days_required }}</span>
+</p>
+
+<table class="w-full border border-slate-800 text-sm">
+  <thead>
+    <tr class="bg-slate-800">
+      <th class="border border-slate-800 px-3 py-2 text-left">#</th>
+      <th class="border border-slate-800 px-3 py-2 text-left">User</th>
+      <th class="border border-slate-800 px-3 py-2 text-left">Score</th>
+      <th class="border border-slate-800 px-3 py-2 text-left">% smoke-free days</th>
+      <th class="border border-slate-800 px-3 py-2 text-left">Avg/day</th>
+      <th class="border border-slate-800 px-3 py-2 text-left">Smoke-free days</th>
+      <th class="border border-slate-800 px-3 py-2 text-left">Days tracked</th>
+      <th class="border border-slate-800 px-3 py-2 text-left">Total cigarettes</th>
+    </tr>
+  </thead>
+
+  <tbody>
+    {% for row in ranking %}
+      <tr>
+        <td class="border border-slate-800 px-3 py-2">
+          {% if row.eligible %}
+            {{ row.place }}
+          {% else %}
+            <span class="text-red-300">Too little data</span>
+          {% endif %}
+        </td>
+        <td class="border border-slate-800 px-3 py-2">{{ row.username }}</td>
+        <td class="border border-slate-800 px-3 py-2">{{ row.score }}</td>
+        <td class="border border-slate-800 px-3 py-2">{{ row.smoke_free_ratio }}%</td>
+        <td class="border border-slate-800 px-3 py-2">{{ row.avg_daily_cigarettes }}</td>
+        <td class="border border-slate-800 px-3 py-2">{{ row.smoke_free_days }}</td>
+        <td class="border border-slate-800 px-3 py-2">{{ row.days_count }}</td>
+        <td class="border border-slate-800 px-3 py-2">{{ row.total_cigarettes }}</td>
+      </tr>
+    {% empty %}
+      <tr>
+        <td colspan="8" class="border border-slate-800 px-3 py-2 text-slate-400">
+          No ranking data yet.
+        </td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>

@@ -1,0 +1,78 @@
+<style>
+  form p {
+    margin: 0 0 12px;
+  }
+  
+  form input:not([type='checkbox']):not([type='radio']),
+  form select,
+  form textarea {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    background: #0f172a;
+    color: white;
+  }
+  
+  form input[type='checkbox'] {
+    width: auto;
+    margin-right: 8px;
+    vertical-align: middle;
+  }
+  
+  form textarea {
+    height: 70px;
+  }
+  
+  form label {
+    margin-bottom: 6px;
+  }
+  
+  .errorlist {
+    color: #f87171;
+    margin: 0 0 12px;
+  }
+</style>
+
+<h2 class="text-lg font-semibold mb-4">Your profile</h2>
+
+<form method="post" class="space-y-4">
+  {% csrf_token %}
+  {{ form.as_p }}
+
+  <button type="submit" class="px-4 py-2 rounded-md bg-green-500 text-black">Update</button>
+</form>
+
+<hr class="border-slate-700 my-6">
+
+<div>
+  <h3 class="text-base font-semibold text-red-400 mb-1">Danger Zone</h3>
+  <p class="text-sm text-slate-400 mb-3">Deleting your account is permanent and cannot be undone. All your logs, statistics and chat history will be lost.</p>
+  <button
+    onclick="document.getElementById('deleteModal').classList.remove('hidden')"
+    class="px-4 py-2 rounded-md bg-red-600 hover:bg-red-700 text-white text-sm"
+  >
+    Delete Account
+  </button>
+</div>
+
+<div id="deleteModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+  <div class="bg-slate-800 rounded-lg p-6 w-full max-w-sm shadow-xl">
+    <h3 class="text-lg font-semibold text-white mb-2">Delete your account?</h3>
+    <p class="text-sm text-slate-400 mb-5">This action is permanent. All your data will be deleted immediately.</p>
+    <div class="flex gap-3">
+      <form method="post" action="{% url 'delete_account' %}">
+        {% csrf_token %}
+        <button type="submit" class="px-4 py-2 rounded-md bg-red-600 hover:bg-red-700 text-white text-sm font-semibold">
+          Yes, delete my account
+        </button>
+      </form>
+      <button
+        onclick="document.getElementById('deleteModal').classList.add('hidden')"
+        class="px-4 py-2 rounded-md bg-slate-600 hover:bg-slate-500 text-white text-sm"
+      >
+        Cancel
+      </button>
+    </div>
+  </div>
+</div>

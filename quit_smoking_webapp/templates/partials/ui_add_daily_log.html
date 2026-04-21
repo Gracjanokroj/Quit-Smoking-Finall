@@ -1,0 +1,195 @@
+<style>
+  form p {
+    margin: 0 0 12px;
+  }
+
+  form label {
+    display: block;
+    margin-bottom: 6px;
+  }
+
+  form input,
+  form select,
+  form textarea {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    background: #0f172a;
+    color: white;
+  }
+
+  form input[type="checkbox"],
+  form input[type="radio"] {
+    width: auto;
+    margin-right: 6px;
+  }
+
+  fieldset {
+    margin: 16px 0;
+    padding: 12px;
+    border: 1px solid #334155;
+    border-radius: 6px;
+  }
+
+  legend {
+    padding: 0 6px;
+  }
+
+  .errorlist,
+  .form-errors {
+    color: #f87171;
+    margin: 0 0 12px;
+  }
+
+  small {
+    display: block;
+    margin-top: 6px;
+    color: #94a3b8;
+  }
+
+  .actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 16px;
+  }
+
+  .actions button,
+  .actions a {
+    padding: 8px 16px;
+    border-radius: 6px;
+    text-decoration: none;
+  }
+
+  .actions button {
+    border: 0;
+    background: #22c55e;
+    color: black;
+    cursor: pointer;
+  }
+
+  .actions a {
+    background: #1e293b;
+    color: white;
+  }
+</style>
+
+<h2 class="text-lg font-semibold mb-4">Add daily log</h2>
+
+<form method="post" novalidate>
+  {% csrf_token %}
+
+  {% if form.errors %}
+    <div class="form-errors">
+      {{ form.errors }}
+    </div>
+  {% endif %}
+
+  <p>{{ form.cigarettes_smoked.label_tag }} {{ form.cigarettes_smoked }}</p>
+  <p>{{ form.smoke_free_day.label_tag }} {{ form.smoke_free_day }}</p>
+  <p id="cigaretteTime">{{ form.first_cigarette_time.label_tag }} {{ form.first_cigarette_time }}</p>
+  <p>{{ form.craving_level.label_tag }} {{ form.craving_level }}</p>
+
+  <p id="emotionsWrapper">
+    {{ form.emotions_input.label_tag }}
+    {{ form.emotions_input }}
+    <datalist id="emotionSuggestions">
+      {% for item in emotion_suggestions %}
+        <option value="{{ item }}"></option>
+      {% endfor %}
+    </datalist>
+    <small>Add emotions separated by commas.</small>
+    {{ form.emotions_input.errors }}
+  </p>
+
+  <p id="situationsWrapper">
+    {{ form.situations_input.label_tag }}
+    {{ form.situations_input }}
+    <datalist id="situationSuggestions">
+      {% for item in situation_suggestions %}
+        <option value="{{ item }}"></option>
+      {% endfor %}
+    </datalist>
+    <small>Add situations separated by commas.</small>
+    {{ form.situations_input.errors }}
+  </p>
+
+  <div class="actions">
+    <button type="submit">Add log</button>
+    <a href="{% url 'ui_daily_log' %}">Cancel</a>
+  </div>
+</form>
+
+<script>
+  function bindDailyLogInteractions() {
+    const cigarettesInput = document.getElementById("id_cigarettes_smoked");
+    const smokeFreeCheckbox = document.getElementById("id_smoke_free_day");
+    const emotionsFieldset = document.getElementById("emotionsWrapper");
+    const situationsFieldset = document.getElementById("situationsWrapper");
+    const cigaretteTime = document.getElementById("cigaretteTime");
+
+    if (!cigarettesInput || !smokeFreeCheckbox) return;
+
+    function updateSmokeFreeState() {
+      if (smokeFreeCheckbox.checked) {
+        cigarettesInput.value = 0;
+
+        if (emotionsFieldset) {
+          emotionsFieldset.style.display = "none";
+        }
+
+        if (situationsFieldset) {
+          situationsFieldset.style.display = "none";
+        }
+
+        if (cigaretteTime) {
+          cigaretteTime.style.display = "none";
+        }
+      } else {
+        if (emotionsFieldset) {
+          emotionsFieldset.style.display = "";
+        }
+
+        if (situationsFieldset) {
+          situationsFieldset.style.display = "";
+        }
+
+        if (cigaretteTime) {
+          cigaretteTime.style.display = "";
+        }
+      }
+    }
+
+    cigarettesInput.addEventListener("input", function () {
+      const value = parseInt(cigarettesInput.value || "0", 10);
+      if (value > 0) {
+        smokeFreeCheckbox.checked = false;
+      }
+      updateSmokeFreeState();
+    });
+
+    smokeFreeCheckbox.addEventListener("change", function () {
+      updateSmokeFreeState();
+    });
+
+    updateSmokeFreeState();
+  }
+
+  bindDailyLogInteractions();
+
+  document.body.addEventListener("htmx:afterSwap", function (event) {
+    if (event.target && event.target.id === "main") {
+      bindDailyLogInteractions();
+    }
+  });
+
+  const emotionsInput = document.getElementById("id_emotions_input");
+  if (emotionsInput) {
+    emotionsInput.setAttribute("list", "emotionSuggestions");
+  }
+
+  const situationsInput = document.getElementById("id_situations_input");
+  if (situationsInput) {
+    situationsInput.setAttribute("list", "situationSuggestions");
+  }
+</script>

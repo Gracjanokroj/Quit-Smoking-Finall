@@ -1,0 +1,83 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Quit Smoking App</title>
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+</head>
+<body class="min-h-screen flex flex-col bg-slate-950 text-white">
+
+  <header>
+    <div class="max-w-5xl mx-auto px-5 py-4 flex justify-between items-center">
+      <div class="text-lg font-semibold">Quit Smoking App</div>
+
+      <div class="flex items-center gap-4">
+        {% if is_authenticated %}
+          <a href="{% url 'dashboard' %}" class="hover:underline">Dashboard</a>
+          <a href="{% url 'logout' %}" class="bg-green-500 text-black px-4 py-2 rounded-md">
+            Logout
+          </a>
+        {% else %}
+          <a href="{% url 'login' %}" class="hover:underline">Login</a>
+          <a href="{% url 'register' %}" class="bg-green-500 text-black px-4 py-2 rounded-md">
+            Register
+          </a>
+        {% endif %}
+      </div>
+    </div>
+  </header>
+
+  <section class="relative flex-1 flex items-center justify-center text-center">
+    <video autoplay muted loop playsinline class="absolute inset-0 w-full h-full object-cover">
+      <source src="{% static 'smoke_bg.mp4' %}" type="video/mp4">
+    </video>
+
+    <div class="relative px-5 max-w-2xl">
+      <img
+        src="{% static 'no-smoking-44049_1280.svg' %}"
+        alt="No smoking icon"
+        class="w-24 mx-auto mb-6"
+      >
+
+      <h1 class="text-3xl font-bold mb-4">Quit Smoking with Awareness</h1>
+
+      <p class="mb-6">
+        This web application helps you understand your smoking habits by tracking
+        emotions, situations and daily cigarette consumption.
+      </p>
+
+      <a href="{% url 'register' %}" class="bg-green-500 text-black px-5 py-3 ">
+        Get Started
+      </a>
+    </div>
+
+    <div class="absolute top-16 left-10 z-10 max-w-[300px] rounded-xl bg-white/10 px-4 py-3 text-left">
+      <p>Track your smoking habits</p>
+      <p>
+        Save the number of cigarettes you smoke and note the situations connected with smoking.
+      </p>
+    </div>
+
+    <div class="absolute bottom-16 left-20 z-10 max-w-[300px] rounded-xl bg-white/10 px-4 py-3 text-left">
+      <p>See your progress</p>
+      <p>
+        Follow your activity over time with simple statistics and charts.
+      </p>
+    </div>
+
+    <div class="absolute top-20 right-12 z-10 max-w-[300px] rounded-xl bg-white/10 px-4 py-3 text-left">
+      <p>Get extra support</p>
+      <p>
+        Use quotes, rankings and chatbot support to stay consistent.
+      </p>
+    </div>
+  </section>
+
+  <footer class="text-center py-4 px-5">
+    This application does not provide medical advice and does not replace a specialist.
+  </footer>
+
+</body>
+</html>

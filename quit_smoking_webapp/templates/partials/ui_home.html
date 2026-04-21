@@ -1,0 +1,257 @@
+{% comment %} <div class="grid gap-4 mb-6 md:grid-cols-2 xl:grid-cols-4">
+  {% for card in summary_cards %}
+    <div class="rounded-lg p-4">
+      <p class="text-xs uppercase mb-2">{{ card.title }}</p>
+      <p class="text-2xl font-bold mb-1">{{ card.value }}</p>
+      <p class="text-sm">{{ card.subtitle }}</p>
+    </div>
+  {% endfor %}
+</div> {% endcomment %}
+
+<div id="home-dashboard-root"
+     data-consumption-labels='{{ consumption_labels_json|default:"[]"|safe }}'
+     data-consumption-values='{{ consumption_values_json|default:"[]"|safe }}'
+     data-monthly-labels='{{ monthly_labels_json|default:"[]"|safe }}'
+     data-monthly-values='{{ monthly_values_json|default:"[]"|safe }}'
+     data-first-cigarette-labels='{{ first_cigarette_week_labels_json|default:"[]"|safe }}'
+     data-first-cigarette-values='{{ first_cigarette_week_values_json|default:"[]"|safe }}'
+     data-smoke-free-days='{{ smoke_free_days_json|default:"0"|safe }}'
+     data-smoking-days='{{ smoking_days_json|default:"0"|safe }}'
+     data-cumulative-labels='{{ cumulative_labels_json|default:"[]"|safe }}'
+     data-cumulative-savings='{{ cumulative_savings_json|default:"[]"|safe }}'
+     data-gauge-value='{{ gauge_value|default:"0" }}'
+     data-emotion-labels='{{ emotion_labels_json|default:"[]"|safe }}'
+     data-emotion-values='{{ emotion_values_json|default:"[]"|safe }}'
+     data-trigger-labels='{{ trigger_labels_json|default:"[]"|safe }}'
+     data-trigger-values='{{ trigger_values_json|default:"[]"|safe }}'>
+  <div class="mb-6 grid grid-cols-[40px_1fr_40px] gap-2 items-center">
+    <button id="summaryPrev" type="button" class="h-10 rounded-md">
+      <-
+    </button>
+
+    <div class="overflow-hidden">
+      <div id="summaryTrack" class="flex gap-4 transition-transform duration-300">
+        {% for card in summary_cards %}
+          <div class="w-full shrink-0 md:w-[calc((100%-16px)/3)] xl:w-[calc((100%-48px)/4)] rounded-lg bg-slate-800 p-4">
+            <p class="text-xs uppercase mb-2">{{ card.title }}</p>
+            <p class="text-2xl font-bold mb-1">{{ card.value }}</p>
+            <p class="text-sm">{{ card.subtitle }}</p>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <button id="summaryNext" type="button" class="h-10 rounded-md">
+    ->
+    </button>
+  </div>
+
+  <div class="flex gap-2 mb-6">
+    <button class="stats-tab bg-green-500 text-black px-4 py-2 rounded-md" data-tab="consumption">Consumption</button>
+    <button class="stats-tab px-4 py-2 rounded-md" data-tab="emotions">Emotions</button>
+    <button class="stats-tab px-4 py-2 rounded-md" data-tab="triggers">Triggers</button>
+  </div>
+
+  <div id="tab-consumption" class="tab-panel active">
+    <div class="text-center mb-8">
+      <h2 class="text-2xl font-semibold mb-3">Motivation Quote</h2>
+
+      {% if motivation_quote %}
+        <blockquote class="max-w-3xl mx-auto text-xl italic">
+          “{{ motivation_quote.text }}”
+        </blockquote>
+        <p class="mt-3 text-sm">— {{ motivation_quote.author }}</p>
+      {% else %}
+        <p>No motivation quote available yet.</p>
+      {% endif %}
+    </div>
+
+    <div class="grid gap-6 mb-6 md:grid-cols-2">
+      <div>
+        {% if not has_today_log %}
+          <div class="mb-4 rounded-md bg-red-500/10 border border-red-400/30 px-4 py-3 text-red-200">
+            You need to add today's log to see today's data.
+          </div>
+        {% endif %}
+
+        <div class="space-y-2 text-sm">
+          <p><span class="font-semibold">Today you smoked (TOTAL):</span> {{ cigarettes_today }}</p>
+          <p><span class="font-semibold">First cigarette today:</span> {{ first_cigarette_today }}</p>
+          <p><span class="font-semibold">Craving today:</span> {{ craving_today }}</p>
+          <p><span class="font-semibold">Your current ranking position:</span> -</p>
+        </div>
+      </div>
+
+      <div class="rounded-lg p-4">
+        <h3 class="font-semibold mb-3">Average per Day</h3>
+        <div class="space-y-2 text-sm">
+          <p>All tracked days: {{ avg_per_day }}</p>
+          <p>Last 7 days: {{ avg_last_7 }}</p>
+          <p>Last 30 days: {{ avg_last_30 }}</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid gap-6 mb-6 md:grid-cols-2">
+      <div class="rounded-lg p-4">
+        <h3 class="font-semibold mb-4">Weekly cigarette consumption over time</h3>
+        <canvas id="consumptionTrendChart"></canvas>
+      </div>
+
+      <div class="rounded-lg p-4">
+        <h3 class="font-semibold mb-4">Craving level in the last 7 days</h3>
+        <div class="h-[260px] flex items-center justify-center">
+          <canvas id="gaugeChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid gap-6 mb-6 md:grid-cols-2">
+      <div class="rounded-lg p-4">
+        <h3 class="font-semibold mb-4">Monthly cigarette consumption</h3>
+        <canvas id="monthlyConsumptionChart"></canvas>
+      </div>
+
+      <div class="rounded-lg p-4">
+        <h3 class="font-semibold mb-4">First cigarette time</h3>
+        <canvas id="firstCigaretteChart"></canvas>
+      </div>
+    </div>
+
+    <div class="grid gap-6 md:grid-cols-2">
+      <div class="rounded-lg p-4">
+        <h3 class="font-semibold mb-4">Cigarettes vs smoke-free days</h3>
+        <canvas id="smokeFreeChart"></canvas>
+      </div>
+
+      <div class="rounded-lg p-4">
+        <h3 class="font-semibold mb-2">Cumulative savings</h3>
+        <p class="text-sm mb-4">This month you saved: {{ estimated_saved }}</p>
+        <canvas id="savingsChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div id="tab-emotions" class="tab-panel">
+    <div class="text-center mb-8">
+      <h2 class="text-2xl font-semibold mb-3">Motivation Quote</h2>
+
+      {% if motivation_quote %}
+        <blockquote class="max-w-3xl mx-auto text-xl italic">
+          “{{ motivation_quote.text }}”
+        </blockquote>
+        <p class="mt-3 text-sm">— {{ motivation_quote.author }}</p>
+      {% else %}
+        <p>No motivation quote available yet.</p>
+      {% endif %}
+    </div>
+
+    <p class="text-center text-sm text-slate-300 mb-6">
+      Here are your top 3 emotions that occur when you smoke
+    </p>
+
+    <div class="flex justify-center items-end gap-3 mb-8 text-center">
+      <div class="w-24 rounded-t-md bg-slate-800 py-6">
+        <p class="text-sm text-slate-400">2</p>
+        <p>{{ top_3_emotions.1|default:'-' }}</p>
+      </div>
+
+      <div class="w-24 rounded-t-md bg-slate-700 py-10">
+        <p class="text-sm text-slate-400">1</p>
+        <p>{{ top_3_emotions.0|default:'-' }}</p>
+      </div>
+
+      <div class="w-24 rounded-t-md bg-slate-800 py-3">
+        <p class="text-sm text-slate-400">3</p>
+        <p>{{ top_3_emotions.2|default:'-' }}</p>
+      </div>
+    </div>
+
+    <div class="text-center text-sm space-y-2 mb-8">
+      <p><span class="font-semibold">Most Frequent Emotion today:</span> {{ most_frequent_emotion_today }}</p>
+      <p><span class="font-semibold">Most Frequent Emotion This week:</span> {{ most_frequent_emotion_week }}</p>
+      <p><span class="font-semibold">Most Frequent Emotion This month:</span> {{ most_frequent_emotion_month }}</p>
+    </div>
+
+    <h3 class="text-center font-semibold mb-4">Overall emotions breakdown</h3>
+
+    <div class="grid gap-6 md:grid-cols-2">
+      <div class="rounded-lg p-4">
+        <canvas id="emotionsPieChart"></canvas>
+      </div>
+
+      <div class="rounded-lg p-4">
+        <canvas id="emotionsBarChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div id="tab-triggers" class="tab-panel">
+    <div class="text-center mb-8">
+      <h2 class="text-2xl font-semibold mb-3">Motivation Quote</h2>
+
+      {% if motivation_quote %}
+        <blockquote class="max-w-3xl mx-auto text-xl italic">
+          “{{ motivation_quote.text }}”
+        </blockquote>
+        <p class="mt-3 text-sm">— {{ motivation_quote.author }}</p>
+      {% else %}
+        <p>No motivation quote available yet.</p>
+      {% endif %}
+    </div>
+
+    <p class="text-center text-sm mb-6">
+      Here are your top 3 trigger situations when you are smoking the most
+    </p>
+
+    <div class="flex justify-center items-end gap-3 mb-8 text-center">
+      <div class="w-24 rounded-t-md bg-slate-800 py-6">
+        <p class="text-sm text-slate-400">2</p>
+        <p>{{ top_3_triggers.1|default:'-' }}</p>
+      </div>
+
+      <div class="w-24 rounded-t-md bg-slate-700 py-10">
+        <p class="text-sm text-slate-400">1</p>
+        <p>{{ top_3_triggers.0|default:'-' }}</p>
+      </div>
+
+      <div class="w-24 rounded-t-md bg-slate-800 py-3">
+        <p class="text-sm text-slate-400">3</p>
+        <p>{{ top_3_triggers.2|default:'-' }}</p>
+      </div>
+    </div>
+
+    <div class="text-center text-sm space-y-2 mb-8">
+      <p><span class="font-semibold">Most Frequent Trigger today:</span> {{ most_frequent_trigger_today }}</p>
+      <p><span class="font-semibold">Most Frequent Trigger This week:</span> {{ most_frequent_trigger_week }}</p>
+      <p><span class="font-semibold">Most Frequent Trigger This month:</span> {{ most_frequent_trigger_month }}</p>
+    </div>
+
+    <h3 class="text-center font-semibold mb-4">Overall triggers and situations breakdown</h3>
+
+    <div class="grid gap-6 mb-8 md:grid-cols-2">
+      <div class="rounded-lg p-4">
+        <canvas id="triggersPieChart"></canvas>
+      </div>
+
+      <div class="rounded-lg p-4">
+        <canvas id="triggersBarChart"></canvas>
+      </div>
+    </div>
+
+    <h3 class="text-center font-semibold mb-3">Personalized advice for user</h3>
+    <p class="max-w-3xl mx-auto text-center text-sm text-slate-300 leading-7">
+      {{ trigger_advice }}
+    </p>
+  </div>
+
+  <style>
+    .tab-panel {
+      display: none;
+    }
+
+    .tab-panel.active {
+      display: block;
+    }
+  </style>
+</div>

@@ -1,0 +1,495 @@
+{% load static %}
+<!DOCTYPE HTML>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Quit Smoking · Dashboard</title>
+
+  <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body class="min-h-screen bg-slate-950 text-white">
+  <div class="max-w-6xl mx-auto px-4 py-4 md:py-6">
+    <div class="grid gap-4 md:grid-cols-[240px_1fr]">
+
+      <aside class="bg-slate-900 rounded-lg">
+        <div class="flex items-center gap-3 p-4 border-b border-slate-800">
+          <img
+            src="{% static 'no-smoking-44049_1280.svg' %}"
+            alt="Quit Smoking logo"
+            class="w-10 h-10"
+          >
+          <div>
+            <p class="font-semibold">Quit Smoking</p>
+            <p class="text-sm text-slate-400">panel</p>
+          </div>
+        </div>
+
+        <div class="p-2" id="menu">
+          {% if not has_profile %}
+            <button
+              class="w-full text-left px-3 py-2 rounded-md hover:bg-slate-800"
+              hx-get="{% url 'ui_starting_point' %}"
+              hx-target="#main"
+              hx-push-url="true"
+            >
+              Your Starting Point
+            </button>
+          {% else %}
+            <button
+              class="active w-full text-left px-3 py-2 rounded-md bg-slate-800"
+              hx-get="{% url 'ui_home' %}"
+              hx-target="#main"
+              hx-push-url="true"
+              hx-trigger="click"
+            >
+              Dashboard
+            </button>
+            <button
+              class="w-full text-left px-3 py-2 rounded-md hover:bg-slate-800"
+              hx-get="{% url 'ui_daily_log' %}"
+              hx-target="#main"
+              hx-push-url="true"
+            >
+              Daily Log
+            </button>
+            <button
+              class="w-full text-left px-3 py-2 rounded-md hover:bg-slate-800"
+              hx-get="{% url 'ui_profile' %}"
+              hx-target="#main"
+              hx-push-url="true"
+            >
+              Profile
+            </button>
+            <button
+              class="w-full text-left px-3 py-2 rounded-md hover:bg-slate-800"
+              hx-get="{% url 'ui_chat' %}"
+              hx-target="#main"
+              hx-push-url="true"
+            >
+              ChatBot
+            </button>
+            <button
+              class="w-full text-left px-3 py-2 rounded-md hover:bg-slate-800"
+              hx-get="{% url 'ui_ranking' %}"
+              hx-target="#main"
+              hx-push-url="true"
+            >
+              Ranking
+            </button>
+          {% endif %}
+        </div>
+
+        <div class="p-4 border-t border-slate-800 text-sm text-slate-400">
+          <p>© 2026 · Gracjan Okroj</p>
+          <a href="{% url 'logout' %}" class="block mt-3 text-red-300 hover:underline">
+            Log out
+          </a>
+        </div>
+      </aside>
+
+      <main class="bg-slate-900 rounded-lg">
+        <div class="flex flex-col gap-3 border-b border-slate-800 p-4 md:flex-row md:items-center md:justify-between">
+          {% if has_profile %}
+            <div>
+              <h1 class="text-xl font-semibold">Dashboard</h1>
+              <p class="text-sm text-slate-400">
+                Remember your reason to quit: {{ request.user.userprofile.reason_to_quit }}
+              </p>
+            </div>
+          {% else %}
+            <div>
+              <h1 class="text-xl font-semibold">Your starting point</h1>
+              <p class="text-sm text-slate-400">
+                To use this webside you must complete starting point form, to measure your future progress.
+              </p>
+            </div>
+          {% endif %}
+
+          <div class="text-sm text-slate-300">
+            User: <span class="font-semibold">{{ request.user.username }}</span>
+          </div>
+        </div>
+
+        <div class="p-4" id="main">
+          <div class="hidden htmx-indicator mb-4 text-sm text-slate-400">Loading...</div>
+
+          {% if content_template %}
+            {% include content_template %}
+          {% elif has_profile %}
+            {% include 'partials/ui_home.html' %}
+          {% else %}
+            {% include 'partials/ui_starting_point.html' %}
+          {% endif %}
+        </div>
+      </main>
+
+    </div>
+  </div>
+
+  <script>
+  const menu = document.getElementById("menu");
+
+  if (menu) {
+    menu.addEventListener("click", (e) => {
+      const btn = e.target.closest("button");
+      if (!btn) return;
+
+      menu.querySelectorAll("button").forEach((b) => {
+        b.classList.remove("bg-slate-800");
+      });
+
+      btn.classList.add("bg-slate-800");
+    });
+  }
+
+  const chartRegistry = {};
+
+  function destroyChart(name) {
+    if (chartRegistry[name]) {
+      chartRegistry[name].destroy();
+      delete chartRegistry[name];
+    }
+  }
+
+  function parseJsonAttr(root, attrName, fallback) {
+    try {
+      const value = root.dataset[attrName];
+      if (!value) return fallback;
+      return JSON.parse(value);
+    } catch (e) {
+      return fallback;
+    }
+  }
+
+  function initHomeTabs(root) {
+    const tabButtons = root.querySelectorAll(".stats-tab");
+    const tabPanels = root.querySelectorAll(".tab-panel");
+
+    tabButtons.forEach((btn) => {
+      btn.onclick = () => {
+        tabButtons.forEach((b) => {
+          b.classList.remove("active", "bg-green-500", "text-black");
+          b.classList.add("bg-slate-800");
+        });
+
+        tabPanels.forEach((panel) => panel.classList.remove("active"));
+
+        btn.classList.add("active", "bg-green-500", "text-black");
+        btn.classList.remove("bg-slate-800");
+
+        const target = root.querySelector("#tab-" + btn.dataset.tab);
+        if (target) {
+          target.classList.add("active");
+        }
+      };
+    });
+  }
+
+  function initSummarySlider(root) {
+    const summaryTrack = root.querySelector("#summaryTrack");
+    const summaryPrev = root.querySelector("#summaryPrev");
+    const summaryNext = root.querySelector("#summaryNext");
+
+    if (!summaryTrack || !summaryPrev || !summaryNext) return;
+
+    let currentIndex = 0;
+
+    function getVisibleCards() {
+      if (window.innerWidth >= 1280) return 4;
+      if (window.innerWidth >= 768) return 2;
+      return 1;
+    }
+
+    function updateSummarySlider() {
+      const cards = summaryTrack.children;
+      if (!cards.length) return;
+
+      const visibleCards = getVisibleCards();
+      const maxIndex = Math.max(cards.length - visibleCards, 0);
+
+      if (currentIndex > maxIndex) {
+        currentIndex = maxIndex;
+      }
+
+      const cardWidth = cards[0].offsetWidth;
+      const gap = 16;
+      const offset = currentIndex * (cardWidth + gap);
+
+      summaryTrack.style.transform = `translateX(-${offset}px)`;
+
+      summaryPrev.disabled = currentIndex === 0;
+      summaryNext.disabled = currentIndex >= maxIndex;
+    }
+
+    summaryPrev.onclick = function () {
+      currentIndex = Math.max(currentIndex - 1, 0);
+      updateSummarySlider();
+    };
+
+    summaryNext.onclick = function () {
+      const cards = summaryTrack.children;
+      const visibleCards = getVisibleCards();
+      const maxIndex = Math.max(cards.length - visibleCards, 0);
+
+      currentIndex = Math.min(currentIndex + 1, maxIndex);
+      updateSummarySlider();
+    };
+
+    window.addEventListener("resize", updateSummarySlider);
+    updateSummarySlider();
+  }
+
+  function initHomeCharts() {
+    const root = document.getElementById("home-dashboard-root");
+    if (!root) return;
+
+    const consumptionLabels = parseJsonAttr(root, "consumptionLabels", []);
+    const consumptionValues = parseJsonAttr(root, "consumptionValues", []);
+
+    const monthlyLabels = parseJsonAttr(root, "monthlyLabels", []);
+    const monthlyValues = parseJsonAttr(root, "monthlyValues", []);
+
+    const firstCigaretteLabels = parseJsonAttr(root, "firstCigaretteLabels", []);
+    const firstCigaretteValues = parseJsonAttr(root, "firstCigaretteValues", []);
+
+    const smokeFreeDays = parseJsonAttr(root, "smokeFreeDays", 0);
+    const smokingDays = parseJsonAttr(root, "smokingDays", 0);
+
+    const cumulativeLabels = parseJsonAttr(root, "cumulativeLabels", []);
+    const cumulativeSavings = parseJsonAttr(root, "cumulativeSavings", []);
+
+    const emotionLabels = parseJsonAttr(root, "emotionLabels", []);
+    const emotionValues = parseJsonAttr(root, "emotionValues", []);
+
+    const triggerLabels = parseJsonAttr(root, "triggerLabels", []);
+    const triggerValues = parseJsonAttr(root, "triggerValues", []);
+
+    const gaugeValue = Number(root.dataset.gaugeValue || 0);
+
+    initHomeTabs(root);
+    initSummarySlider(root);
+
+    const centerTextPlugin = {
+      id: "centerTextPlugin",
+      afterDraw(chart) {
+        const { ctx } = chart;
+        const meta = chart.getDatasetMeta(0);
+
+        if (!meta || !meta.data || !meta.data.length) return;
+
+        const x = meta.data[0].x;
+        const y = meta.data[0].y;
+
+        let cravingLabel = "Low";
+        if (gaugeValue >= 2.5) cravingLabel = "High";
+        else if (gaugeValue >= 1.5) cravingLabel = "Medium";
+
+        ctx.save();
+        ctx.font = "bold 24px system-ui";
+        ctx.fillStyle = "#e8eefb";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(cravingLabel, x, y + 10);
+        ctx.restore();
+      }
+    };
+
+    destroyChart("consumptionTrendChart");
+    destroyChart("monthlyConsumptionChart");
+    destroyChart("firstCigaretteChart");
+    destroyChart("smokeFreeChart");
+    destroyChart("savingsChart");
+    destroyChart("gaugeChart");
+    destroyChart("emotionsPieChart");
+    destroyChart("emotionsBarChart");
+    destroyChart("triggersPieChart");
+    destroyChart("triggersBarChart");
+
+    const trendCanvas = document.getElementById("consumptionTrendChart");
+    if (trendCanvas) {
+      chartRegistry["consumptionTrendChart"] = new Chart(trendCanvas, {
+        type: "line",
+        data: {
+          labels: consumptionLabels,
+          datasets: [{
+            label: "Cigarettes",
+            data: consumptionValues,
+            tension: 0.35
+          }]
+        },
+        options: { responsive: true }
+      });
+    }
+
+    const monthlyCanvas = document.getElementById("monthlyConsumptionChart");
+    if (monthlyCanvas) {
+      chartRegistry["monthlyConsumptionChart"] = new Chart(monthlyCanvas, {
+        type: "bar",
+        data: {
+          labels: monthlyLabels,
+          datasets: [{
+            label: "Cigarettes per week",
+            data: monthlyValues
+          }]
+        },
+        options: { responsive: true }
+      });
+    }
+
+    const firstCanvas = document.getElementById("firstCigaretteChart");
+    if (firstCanvas) {
+      chartRegistry["firstCigaretteChart"] = new Chart(firstCanvas, {
+        type: "bar",
+        data: {
+          labels: firstCigaretteLabels,
+          datasets: [{
+            label: "Hour",
+            data: firstCigaretteValues
+          }]
+        },
+        options: {
+          responsive: true,
+          indexAxis: "y"
+        }
+      });
+    }
+
+    const smokeCanvas = document.getElementById("smokeFreeChart");
+    if (smokeCanvas) {
+      chartRegistry["smokeFreeChart"] = new Chart(smokeCanvas, {
+        type: "doughnut",
+        data: {
+          labels: ["Smoke-free", "Smoking"],
+          datasets: [{
+            data: [smokeFreeDays, smokingDays]
+          }]
+        },
+        options: { responsive: true }
+      });
+    }
+
+    const savingsCanvas = document.getElementById("savingsChart");
+    if (savingsCanvas) {
+      chartRegistry["savingsChart"] = new Chart(savingsCanvas, {
+        type: "line",
+        data: {
+          labels: cumulativeLabels,
+          datasets: [{
+            label: "Savings",
+            data: cumulativeSavings,
+            tension: 0.3
+          }]
+        },
+        options: { responsive: true }
+      });
+    }
+
+    const gaugeCanvas = document.getElementById("gaugeChart");
+    if (gaugeCanvas) {
+      chartRegistry["gaugeChart"] = new Chart(gaugeCanvas, {
+        type: "doughnut",
+        data: {
+          datasets: [{
+            data: [gaugeValue, Math.max(3 - gaugeValue, 0)]
+          }]
+        },
+        options: {
+          responsive: true,
+          rotation: -90,
+          circumference: 180,
+          cutout: "70%"
+        },
+        plugins: [centerTextPlugin]
+      });
+    }
+
+    const emotionsPieCanvas = document.getElementById("emotionsPieChart");
+    if (emotionsPieCanvas) {
+      chartRegistry["emotionsPieChart"] = new Chart(emotionsPieCanvas, {
+        type: "pie",
+        data: {
+          labels: emotionLabels,
+          datasets: [{
+            data: emotionValues
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { position: "left" }
+          }
+        }
+      });
+    }
+
+    const emotionsBarCanvas = document.getElementById("emotionsBarChart");
+    if (emotionsBarCanvas) {
+      chartRegistry["emotionsBarChart"] = new Chart(emotionsBarCanvas, {
+        type: "bar",
+        data: {
+          labels: emotionLabels,
+          datasets: [{
+            label: "Count",
+            data: emotionValues
+          }]
+        },
+        options: {
+          responsive: true,
+          indexAxis: "y"
+        }
+      });
+    }
+
+    const triggersPieCanvas = document.getElementById("triggersPieChart");
+    if (triggersPieCanvas) {
+      chartRegistry["triggersPieChart"] = new Chart(triggersPieCanvas, {
+        type: "doughnut",
+        data: {
+          labels: triggerLabels,
+          datasets: [{
+            data: triggerValues
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { position: "left" }
+          },
+          cutout: "50%"
+        }
+      });
+    }
+
+    const triggersBarCanvas = document.getElementById("triggersBarChart");
+    if (triggersBarCanvas) {
+      chartRegistry["triggersBarChart"] = new Chart(triggersBarCanvas, {
+        type: "bar",
+        data: {
+          labels: triggerLabels,
+          datasets: [{
+            label: "Count",
+            data: triggerValues
+          }]
+        },
+        options: {
+          responsive: true,
+          indexAxis: "y"
+        }
+      });
+    }
+  }
+
+  document.addEventListener("DOMContentLoaded", initHomeCharts);
+
+  document.body.addEventListener("htmx:afterSwap", function (event) {
+    if (event.target && event.target.id === "main") {
+      initHomeCharts();
+    }
+  });
+</script>
+</body>
+</html>
